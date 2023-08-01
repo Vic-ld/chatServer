@@ -1,5 +1,5 @@
 #include "ChatServer.h"
-
+#include "common.h"
 //std::string jsondata = R"({"flag":0,"name":"xxx","msg":"test","target":"xx","ChatInfo":{"total":1,"names":["ld"]}})";
 
 void ChatServer::start()
@@ -17,7 +17,7 @@ void ChatServer::start()
     event.data.fd = m_serverSocket;
     epoll_ctl(epfd, EPOLL_CTL_ADD, m_serverSocket, &event);
 
-    char buf[225];
+    char *buf;
 
     int clnt_sock;
     struct sockaddr_in clnt_addr;
@@ -51,7 +51,7 @@ void ChatServer::start()
             }
             else //¿Í·þ¶ËÌ×½Ó×Ö
             {
-                ssize_t  len = read(all_events[i].data.fd, buf, sizeof(buf));
+                int len = recvMsg(all_events[i].data.fd,&buf);
                 if (len <= 0)
                 {
                     epoll_ctl(epfd, EPOLL_CTL_DEL, all_events[i].data.fd, NULL);
@@ -60,6 +60,7 @@ void ChatServer::start()
                 }
                 else
                 {
+
                     handleMsg(all_events[i].data.fd,buf, len);
                    //printf("receive from client:%s\n", buf);
                    // send(buf, len);
@@ -96,7 +97,7 @@ void ChatServer::handleMsg(int fd, const char* msg, int len)
     case 2://Ë½ÁÄ
     {
         int target = m_name2ID.find(m_msg.target)->second;
-        write(target, msg, len);
+        writen(target, msg, len);
         break;
     }
 
@@ -139,6 +140,20 @@ void ChatServer::delFd(int fd)
     updateInfo();
 }
 
+int ChatServer::recvMsg(int fd, char**buf)
+{
+    int netlen = 0;
+    int ret = readn(fd, (char*)&netlen, sizeof(int));
+    int len = ntohl(netlen);
+    std::cout << "len ==" << len << std::endl;
+    char* tmp = new char[len + 1];
+    ret = readn(fd, tmp, len);
+    tmp[len] = '\0';
+    *buf = tmp;
+    std::cout << "buf ==" << *buf << std::endl;
+    return ret;
+}
+
 
 void ChatServer::init()
 {
@@ -176,7 +191,7 @@ void ChatServer::send(const char *msg, int len )
     for (auto& clnt : m_clientSockets)
     {
        // std::cout << "clnt==" << clnt << std::endl;
-        write(clnt, msg, len);
+        writen(clnt, msg, len);
     }
 }
 

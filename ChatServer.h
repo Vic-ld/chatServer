@@ -32,6 +32,7 @@ public:
 	void handleMsg(int fd,const char* msg, int len);
 	void updateInfo();
 	void delFd(int fd);
+	int recvMsg(int fd, char** buf);
 
 private:
 	int m_serverSocket;
